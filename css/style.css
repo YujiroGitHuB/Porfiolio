@@ -1,8 +1,7 @@
-
 body {
-  background: linear-gradient(191deg,#88cc6c,#44d5ac,#4e4932,#b2d59e,#7013f4);
-  background-size: 300% 300%;
-  animation: gradient-animation 4s ease infinite;
+  background: linear-gradient(77deg,#326454,#c9ee,#3f10b1,#c495a9);
+  background-size: 240% 240%;
+  animation: gradient-animation 8s ease infinite;
   color: white;
 }
 
@@ -69,19 +68,6 @@ body {
   height: 100vh !important;
 }
 
-@keyframes gradient-animation {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
 
 .profile img {
   border-radius: 74% 0% 75% 0% / 52% 48% 51% 48%;
