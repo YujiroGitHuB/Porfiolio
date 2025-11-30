@@ -11,7 +11,6 @@ const portfolioContext = `
         - Facebook: https://www.facebook.com/charlesnixon.cayading
         - Messenger: https://m.me/charlesnixon.cayading
         `;
-
 const quickResponses = {
     'projects': `I have worked on various exciting projects! Check out my portfolio:<br><br>
                 🚀 <a href="https://cncc.vercel.app/#projects" target="_blank">View All My Projects</a><br><br>
