@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Portfolio Chatbot</title>
+    <style>
+        /* Chatbot Toggle Button */
+        .chat-toggle-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            z-index: 9999;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .chat-toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .chat-toggle-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .chat-widget-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 550px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9998;
+            animation: slideUp 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-widget-container.active {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-content h3 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .chat-header-content p {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .close-chat-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .close-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f9fafb;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .bot .avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .user .avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .bot .message-content {
+            background: white;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .bot .message-content a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .bot .message-content a:hover {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #f9fafb;
+        }
+
+        .quick-reply-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .quick-reply-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 480px) {
+            .chat-widget-container {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 120px);
+                right: 10px;
+                bottom: 90px;
+            }
+
+            .chat-toggle-btn {
+                right: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="chat-toggle-btn" id="chatToggleBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+        </svg>
+        <span class="notification-badge">1</span>
+    </button>
+
+    <div class="chat-widget-container" id="chatWidget">
+        <div class="chat-header">
+            <div class="chat-header-content">
+                <h3><span class="status-dot"></span>AI Portfolio Assistant</h3>
+                <p>Powered by AI • Ask me anything!</p>
+            </div>
+            <button class="close-chat-btn" id="closeChatBtn">×</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="avatar">🤖</div>
+                <div class="message-content">
+                    Hi! I'm an AI assistant here to help you learn about Charles Nixon's portfolio. What would you like to know?
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-replies" id="quickReplies">
+            <button class="quick-reply-btn" onclick="sendQuickReply('Tell me about your projects')">Projects</button>
+            <button class="quick-reply-btn" onclick="sendQuickReply('What are your skills?')">Skills</button>
+            <button class="quick-reply-btn" onclick="sendQuickReply('How can I contact you?')">Contact</button>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const portfolioContext = `
+        About Charles Nixon Cayading:
+        - Web Developer and IT Instructor with 1+ years of experience
+        - Skills: Frontend (Vue.js, React, JavaScript, HTML5, CSS3, Bootstrap, Tailwind CSS)
+        - Backend: PHP, MySQL, Laravel, Docker, REST API, AWS
+        - Projects: IPT Link Submission, BCC SAS QR Code Generator, BCC Student Attendance System
+        - Education: Computer Science degree
+        - Location: Tamayo, Ilocos, Philippines
+        - Contact: charlesnixoncayading@gmail.com
+        - Portfolio: https://cncc.vercel.app
+        - Facebook: https://www.facebook.com/charlesnixon.cayading
+        - Messenger: https://m.me/charlesnixon.cayading
+        `;
+
+        const quickResponses = {
+            'projects': `I have worked on various exciting projects! Check out my portfolio:<br><br>
+                🚀 <a href="https://cncc.vercel.app/#projects" target="_blank">View All My Projects</a><br><br>
+                Including IPT Link Submission, BCC SAS QR Code Generator, and Student Attendance System!`,
+            'skills': `My main skills include:<br><br>
+                <strong>Frontend:</strong> Vue.js, React, JavaScript, HTML5, CSS3, Bootstrap, Tailwind CSS<br><br>
+                <strong>Backend:</strong> PHP, MySQL, Laravel, Docker, REST API, AWS<br><br>
+                I'm always learning new technologies to stay current!`,
+            'contact': `You can reach me through these platforms:<br><br>
+                📧 <a href="mailto:charlesnixoncayading@gmail.com">charlesnixoncayading@gmail.com</a><br><br>
+                💬 <a href="https://m.me/charlesnixon.cayading" target="_blank">Messenger</a><br><br>
+                📱 <a href="https://www.facebook.com/charlesnixon.cayading" target="_blank">Facebook</a><br><br>
+                I'm always open to new opportunities!`,
+        };
+
+        const chatToggleBtn = document.getElementById('chatToggleBtn');
+        const chatWidget = document.getElementById('chatWidget');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const notificationBadge = document.querySelector('.notification-badge');
+        const sendBtn = document.getElementById('sendBtn');
+
+        chatToggleBtn.addEventListener('click', () => {
+            chatWidget.classList.add('active');
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+            }
+        });
+
+        closeChatBtn.addEventListener('click', () => {
+            chatWidget.classList.remove('active');
+        });
+
+        function addMessage(text, isUser) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="avatar">${isUser ? '👤' : '🤖'}</div>
+                <div class="message-content">${text}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageDiv;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typingIndicator';
+            
+            typingDiv.innerHTML = `
+                <div class="avatar">🤖</div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        async function getAIResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // Check for quick responses first
+            if (message.includes('project')) return quickResponses.projects;
+            if (message.includes('skill')) return quickResponses.skills;
+            if (message.includes('contact') || message.includes('email')) return quickResponses.contact;
+
+            // Use free Hugging Face API
+            try {
+                const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputs: `Context: ${portfolioContext}\n\nUser question: ${userMessage}\n\nProvide a helpful, friendly response about Charles Nixon Cayading's portfolio:`,
+                        parameters: {
+                            max_length: 150,
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data[0] && data[0].generated_text) {
+                        return data[0].generated_text;
+                    }
+                }
+            } catch (error) {
+                console.log('AI fallback active');
+            }
+
+            // Smart fallback responses
+            if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+                return 'Hello! I\'m here to help you learn about Charles Nixon\'s portfolio. Feel free to ask about his projects, skills, or experience!';
+            }
+            if (message.includes('experience') || message.includes('work')) {
+                return 'Charles has 1+ years of experience in web development, working as both a Web Developer and IT Instructor. He specializes in creating modern, responsive web applications using technologies like Vue.js, React, and Laravel.';
+            }
+            if (message.includes('education') || message.includes('study')) {
+                return 'Charles holds a degree in Computer Science and continuously expands his knowledge through online courses and hands-on projects.';
+            }
+            if (message.includes('location') || message.includes('where')) {
+                return 'Charles is based in Tamayo, Ilocos, Philippines.';
+            }
+            if (message.includes('thank')) {
+                return 'You\'re welcome! Feel free to ask anything else about the portfolio. 😊';
+            }
+
+            return 'That\'s a great question! I can help you with information about Charles\' projects, skills, experience, or contact details. What would you like to know?';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Disable input while processing
+            input.disabled = true;
+            sendBtn.disabled = true;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            showTypingIndicator();
+            
+            try {
+                const response = await getAIResponse(message);
+                removeTypingIndicator();
+                addMessage(response, false);
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('I\'m here to help! Ask me about projects, skills, or how to contact Charles.', false);
+            } finally {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        async function sendQuickReply(message) {
+            addMessage(message, true);
+            showTypingIndicator();
+            
+            try {
+                const response = await getAIResponse(message);
+                removeTypingIndicator();
+                addMessage(response, false);
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('Let me help you with that!', false);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !sendBtn.disabled) {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
