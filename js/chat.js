@@ -32,15 +32,63 @@ const closeChatBtn = document.getElementById('closeChatBtn');
 const notificationBadge = document.querySelector('.notification-badge');
 const sendBtn = document.getElementById('sendBtn');
 
+// Text-to-Speech function (Jarvis-style)
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Jarvis-style settings
+        utterance.rate = 0.85; // Slightly slower, more composed
+        utterance.pitch = 0.9; // Lower pitch for sophisticated sound
+        utterance.volume = 1; // Full volume
+        
+        // Try to use British English voice (like Jarvis)
+        utterance.lang = 'en-GB';
+        
+        // Try to select a male British voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const jarvisVoice = voices.find(voice => 
+            voice.lang.includes('en-GB') || 
+            voice.lang.includes('en-UK') ||
+            voice.name.includes('British') ||
+            voice.name.includes('Daniel') ||
+            voice.name.includes('Male')
+        );
+        
+        if (jarvisVoice) {
+            utterance.voice = jarvisVoice;
+        }
+        
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+// Load voices when they become available
+if ('speechSynthesis' in window) {
+    speechSynthesis.addEventListener('voiceschanged', () => {
+        const voices = speechSynthesis.getVoices();
+        console.log('Available voices:', voices.map(v => v.name + ' (' + v.lang + ')'));
+    });
+}
+
+// Speak when chat opens
 chatToggleBtn.addEventListener('click', () => {
     chatWidget.classList.add('active');
     if (notificationBadge) {
         notificationBadge.style.display = 'none';
     }
+    
+    // Speak greeting
+    speak("Hi!, I'm Lexon the ChatBot assistant here to help you learn about Charles Nixon's portfolio. What would you like to know?");
 });
 
 closeChatBtn.addEventListener('click', () => {
     chatWidget.classList.remove('active');
+    // Stop any ongoing speech when closing
+    window.speechSynthesis.cancel();
 });
 
 function addMessage(text, isUser) {
@@ -157,9 +205,15 @@ async function sendMessage() {
         const response = await getAIResponse(message);
         removeTypingIndicator();
         addMessage(response, false);
+        
+        // Speak the bot's response (remove HTML tags for clean speech)
+        const cleanText = response.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        speak(cleanText);
     } catch (error) {
         removeTypingIndicator();
-        addMessage('I\'m here to help! Ask me about projects, skills, or how to contact Charles.', false);
+        const errorMsg = 'I\'m here to help! Ask me about projects, skills, or how to contact Charles.';
+        addMessage(errorMsg, false);
+        speak(errorMsg);
     } finally {
         input.disabled = false;
         sendBtn.disabled = false;
@@ -175,9 +229,15 @@ async function sendQuickReply(message) {
         const response = await getAIResponse(message);
         removeTypingIndicator();
         addMessage(response, false);
+        
+        // Speak the bot's response (remove HTML tags for clean speech)
+        const cleanText = response.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        speak(cleanText);
     } catch (error) {
         removeTypingIndicator();
-        addMessage('Let me help you with that!', false);
+        const errorMsg = 'Let me help you with that!';
+        addMessage(errorMsg, false);
+        speak(errorMsg);
     }
 }
 
