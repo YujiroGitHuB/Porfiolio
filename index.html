@@ -1,298 +1,1148 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Charles Nixon Cayading | Portfolio</title>
-    <link rel="icon" type="image/x-icon" href="https://img.icons8.com/?size=80&id=RH2knxpdDpjm&format=png" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/chat.css">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <script src="https://kit.fontawesome.com/6e74bd18af.js" crossorigin="anonymous"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Charles Nixon Cayading | Portfolio</title>
+  <link rel="icon" type="image/x-icon" href="https://img.icons8.com/?size=80&id=RH2knxpdDpjm&format=png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/6e74bd18af.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --cyan: #00f5d4;
+      --blue: #3b82f6;
+      --bg: #070711;
+      --bg2: #0d0d1a;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e2e8f0;
+      --muted: #64748b;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ─────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── LOADER ──────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-ring {
+      width: 60px; height: 60px;
+      border: 2px solid var(--border);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .loader-text {
+      margin-top: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── NAVBAR ──────────────────────────────────── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 18px 6%;
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(20px);
+      background: rgba(7,7,17,0.7);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+    .nav-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.2rem;
+      color: var(--cyan);
+      text-decoration: none;
+      letter-spacing: 1px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-brand img { width: 32px; border-radius: 50%; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: -4px; left: 0;
+      width: 0; height: 1px;
+      background: var(--cyan);
+      transition: width 0.3s ease;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-links a.active { color: var(--cyan); }
+    .nav-links a.active::after { width: 100%; }
+    .nav-toggle { display: none; background: none; border: none; cursor: pointer; }
+    .nav-toggle span {
+      display: block; width: 24px; height: 2px;
+      background: var(--text); margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    /* ── HERO ──────────────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 100px 6% 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,245,212,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,212,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+    .hero-glow {
+      position: absolute; top: 20%; right: 10%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(0,245,212,0.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 60px;
+      position: relative; z-index: 1;
+    }
+    .hero-content { max-width: 600px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,245,212,0.08);
+      border: 1px solid rgba(0,245,212,0.2);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--cyan);
+      margin-bottom: 24px;
+    }
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+    .hero-name {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .hero-name span {
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-role {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .hero-role span { color: var(--cyan); }
+    .hero-desc {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--muted);
+      margin-bottom: 36px;
+      max-width: 520px;
+    }
+    .hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .btn-primary-custom {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: var(--bg);
+      border: none; border-radius: 8px;
+      font-weight: 600; font-size: 14px;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .btn-primary-custom:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,245,212,0.3);
+      color: var(--bg);
+    }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-weight: 500; font-size: 14px;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .btn-ghost:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      transform: translateY(-2px);
+    }
+    .hero-socials { display: flex; gap: 12px; margin-top: 24px; }
+    .social-link {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+    .social-link:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(0,245,212,0.05);
+    }
+
+    /* Profile */
+    .hero-image-wrap {
+      position: relative; flex-shrink: 0;
+    }
+    .hero-image-ring {
+      position: absolute; inset: -16px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,245,212,0.2);
+      animation: rotate 20s linear infinite;
+    }
+    .hero-image-ring::before {
+      content: '';
+      position: absolute; top: -4px; left: 50%;
+      width: 8px; height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      transform: translateX(-50%);
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    .hero-img {
+      width: 300px; height: 300px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid rgba(0,245,212,0.3);
+      display: block;
+    }
+    .hero-stat-cards {
+      position: absolute; bottom: -20px; left: -30px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .stat-card {
+      background: rgba(13,13,26,0.95);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      backdrop-filter: blur(10px);
+    }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem; font-weight: 800;
+      color: var(--cyan);
+    }
+    .stat-lbl { font-size: 11px; color: var(--muted); }
+
+    /* ── SECTION BASE ─────────────────────────────── */
+    section { position: relative; z-index: 1; }
+    .section-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+      max-width: 560px;
+    }
+
+    /* ── ABOUT ──────────────────────────────────────── */
+    #about {
+      padding: 120px 6%;
+      background: var(--bg2);
+    }
+    .about-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .about-image-wrap { position: relative; }
+    .about-img-frame {
+      width: 100%; aspect-ratio: 4/5;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .about-img-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .about-corner {
+      position: absolute; bottom: -20px; right: -20px;
+      width: 120px; height: 120px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border-radius: 20px;
+      opacity: 0.15;
+    }
+    .about-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-top: 32px;
+    }
+    .astat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    .astat:hover { border-color: rgba(0,245,212,0.3); transform: translateY(-2px); }
+    .astat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800;
+      color: var(--cyan);
+    }
+    .astat-lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .about-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .tag {
+      padding: 6px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      font-size: 13px; color: var(--muted);
+      transition: all 0.3s;
+    }
+    .tag:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ── PROJECTS ─────────────────────────────────── */
+    #projects {
+      padding: 120px 6%;
+      background: var(--bg);
+    }
+    .projects-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-end; margin-bottom: 60px;
+      max-width: 1100px; margin-left: auto; margin-right: auto;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      position: relative;
+      group: true;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--blue));
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+    .project-card:hover { border-color: rgba(0,245,212,0.2); transform: translateY(-6px); }
+    .project-card:hover::before { transform: scaleX(1); }
+    .project-img {
+      width: 100%; height: 160px;
+      background: rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .project-img img {
+      width: 80px; height: 80px;
+      object-fit: contain;
+      transition: transform 0.4s;
+    }
+    .project-card:hover .project-img img { transform: scale(1.15); }
+    .project-body { padding: 20px; }
+    .project-body h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      color: #fff; margin-bottom: 8px;
+    }
+    .project-body p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .project-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600;
+      color: var(--cyan); text-decoration: none;
+      transition: gap 0.2s;
+    }
+    .project-link:hover { gap: 10px; color: var(--cyan); }
+
+    /* ── SKILLS ───────────────────────────────────── */
+    #skills {
+      padding: 120px 6%;
+      background: var(--bg2);
+    }
+    .skills-inner { max-width: 1100px; margin: 0 auto; }
+    .skills-header { margin-bottom: 60px; }
+    .skills-category { margin-bottom: 48px; }
+    .cat-label {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--muted);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .cat-label::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: var(--border);
+    }
+    .skills-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .skill-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      font-size: 14px; color: var(--text);
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+    .skill-pill img { width: 22px; height: 22px; object-fit: contain; }
+    .skill-pill:hover {
+      border-color: rgba(0,245,212,0.4);
+      background: rgba(0,245,212,0.05);
+      color: var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    /* ── CONTACT ─────────────────────────────────── */
+    #contact {
+      padding: 120px 6%;
+      background: var(--bg);
+      position: relative; overflow: hidden;
+    }
+    #contact::before {
+      content: '';
+      position: absolute; bottom: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .contact-inner {
+      max-width: 700px; margin: 0 auto;
+      text-align: center;
+    }
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 60px 50px;
+      margin-top: 40px;
+    }
+    .contact-links { display: flex; flex-direction: column; gap: 16px; margin-top: 32px; }
+    .contact-link-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.3s;
+    }
+    .contact-link-row:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      transform: translateX(4px);
+    }
+    .contact-link-row .left { display: flex; align-items: center; gap: 14px; font-size: 14px; }
+    .contact-link-row .icon-circle {
+      width: 36px; height: 36px;
+      background: rgba(0,245,212,0.1);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--cyan);
+    }
+    .contact-link-row span { font-size: 12px; color: var(--muted); }
+
+    /* ── CHATBOT ─────────────────────────────────── */
+    .chat-fab {
+      position: fixed; bottom: 28px; right: 28px;
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none;
+      box-shadow: 0 4px 20px rgba(0,245,212,0.3);
+      z-index: 200;
+      transition: all 0.3s ease;
+    }
+    .chat-fab:hover { transform: scale(1.1); box-shadow: 0 8px 30px rgba(0,245,212,0.4); }
+    .chat-fab svg { width: 22px; height: 22px; fill: var(--bg); }
+    .chat-badge {
+      position: absolute; top: -4px; right: -4px;
+      width: 18px; height: 18px;
+      background: #ef4444;
+      border-radius: 50%;
+      font-size: 10px; font-weight: 700;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chat-window {
+      position: fixed; bottom: 90px; right: 28px;
+      width: 360px;
+      background: #0f0f1e;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      z-index: 199;
+    }
+    .chat-window.open { display: flex; }
+    .chat-head {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(0,245,212,0.1), rgba(59,130,246,0.1));
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-head-info { display: flex; align-items: center; gap: 12px; }
+    .chat-avatar {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .chat-head h4 {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .chat-status { font-size: 11px; color: var(--cyan); display: flex; align-items: center; gap: 5px; }
+    .status-dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: pulse 2s infinite; }
+    .chat-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+    .chat-msgs {
+      height: 300px; overflow-y: auto;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .chat-msgs::-webkit-scrollbar { width: 4px; }
+    .chat-msgs::-webkit-scrollbar-track { background: transparent; }
+    .chat-msgs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .msg { display: flex; gap: 8px; max-width: 85%; }
+    .msg.user { margin-left: auto; flex-direction: row-reverse; }
+    .msg-av {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: rgba(0,245,212,0.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .msg-body {
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px; line-height: 1.5;
+    }
+    .msg.bot .msg-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user .msg-body {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: var(--bg);
+      font-weight: 500;
+      border-bottom-right-radius: 4px;
+    }
+    .quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+    .qbtn {
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px; color: var(--muted);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .qbtn:hover { border-color: var(--cyan); color: var(--cyan); }
+    .chat-input-row {
+      display: flex; gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .chat-input {
+      flex: 1; padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text); font-size: 13px;
+      outline: none;
+    }
+    .chat-input:focus { border-color: rgba(0,245,212,0.4); }
+    .chat-send {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border: none; border-radius: 10px;
+      color: var(--bg); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .chat-send:hover { opacity: 0.9; }
+
+    /* ── FOOTER ──────────────────────────────────── */
+    footer {
+      padding: 32px 6%;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    footer p { font-size: 13px; color: var(--muted); }
+    footer p span { color: var(--cyan); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--cyan); }
+
+    /* ── DIVIDER ─────────────────────────────────── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero-inner { flex-direction: column; text-align: center; }
+      .hero-content { order: 2; }
+      .hero-image-wrap { order: 1; }
+      .hero-desc { margin: 0 auto 36px; }
+      .hero-actions { justify-content: center; }
+      .hero-socials { justify-content: center; }
+      .hero-stat-cards { position: static; flex-direction: row; margin-top: 16px; }
+      .about-inner { grid-template-columns: 1fr; }
+      .about-image-wrap { max-width: 360px; margin: 0 auto; }
+      .nav-links { display: none; }
+      .nav-toggle { display: flex; flex-direction: column; }
+      .projects-header { flex-direction: column; gap: 20px; }
+      .chat-window { width: calc(100vw - 48px); right: 24px; }
+    }
+    @media (max-width: 600px) {
+      #hero { padding: 90px 5% 60px; }
+      #about, #projects, #skills, #contact { padding: 80px 5%; }
+      .contact-card { padding: 40px 24px; }
+      .hero-img { width: 220px; height: 220px; }
+    }
+
+    /* ── TYPING CURSOR ───────────────────────────── */
+    .typed-cursor { color: var(--cyan); }
+  </style>
 </head>
-
 <body>
-    <!-- Loader -->
-    <div id="loader">
-        <!-- From Uiverse.io by Pradeepsaranbishnoi -->
-        <div class="circ">
-            <div class="load">Loading . . . </div>
-            <div class="hands"></div>
-            <div class="body"></div>
-            <div class="head">
-                <div class="eye"></div>
-            </div>
-        </div>
-    </div>
-    <!-- Navbar -->
-    <nav id="navbar" class="navbar navbar-dark bg-transparent fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="index.html">CNCC
-                <img id="navbar-logo" src="images/secure_17122475.gif" alt="">
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar"
-                aria-labelledby="offcanvasDarkNavbarLabel">
-                <div class="offcanvas-header">
-                    <h5 class="offcanvas-title">Menu</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <ul class="navbar-nav text-center">
-                        <li class="nav-item"><a class="nav-link" href="index.html"><i class="fa-solid fa-house"></i>
-                                Home</a>
-                        </li>
-                        <li class="nav-item"><a class="nav-link" href="#aboutme"><i class="fa-solid fa-user"></i> About
-                                Me</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#projects"><i class="fa-solid fa-code"></i>
-                                Projects</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#skills"><i class="fa-solid fa-code"></i>
-                                Skills</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <button class="chat-toggle-btn" id="chatToggleBtn">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
-        </svg>
-        <span class="notification-badge">1</span>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="loader-ring"></div>
+    <p class="loader-text">LOADING</p>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <a class="nav-brand" href="#">
+      CNCC
+    </a>
+    <ul class="nav-links">
+      <li><a href="#hero" class="active">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
     </button>
+  </nav>
 
-    <div class="chat-widget-container" id="chatWidget">
-        <div class="chat-header">
-            <div class="chat-header-content">
-                <h3><span class="status-dot"></span>My ChatBot Assistant: Lexon</h3>
-                <p><i>Your Smart Digital Companion</i></p>
-            </div>
-            <button class="close-chat-btn" id="closeChatBtn">×</button>
-        </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <div class="message bot">
-                <div class="avatar">🤖</div>
-                <div class="message-content">
-                    Hi!, I'm Lexon the ChatBot assistant here to help you learn about Charles Nixon's portfolio. What
-                    would you like to know?
-                </div>
-            </div>
-        </div>
-
-        <div class="quick-replies" id="quickReplies">
-            <button class="quick-reply-btn" onclick="sendQuickReply('Tell me about your projects')">Projects</button>
-            <button class="quick-reply-btn" onclick="sendQuickReply('What are your skills?')">Skills</button>
-            <button class="quick-reply-btn" onclick="sendQuickReply('How can I contact you?')">Contact</button>
-            <button class="quick-reply-btn" onclick="sendQuickReply('Where are you located?')">Location</button>
-            <button class="quick-reply-btn"
-                onclick="sendQuickReply('Tell about your education Background?')">Education</button>
-            <button class="quick-reply-btn" onclick="sendQuickReply('Tell about your experience?')">Experience</button>
-        </div>
-        <div class="chat-input-container">
-            <div class="chat-input-wrapper">
-                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..."
-                    onkeypress="handleKeyPress(event)">
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-            </div>
-        </div>
-    </div>
-    <!-- Hero Section -->
-    <section class="box1" id="box1">
-        <div class="content-left" data-aos="fade-right" data-aos-delay="2000" data-aos-duration="500">
-            <h1 class="h1">Charles Nixon Cayading</h1>
-            <p class="p1" data-aos="fade-right" data-aos-delay="2000" data-aos-duration="1000">Web Developer • IT
-                Instructor</p>
-            <p class="p2" data-aos="fade-right" data-aos-delay="2000" data-aos-duration="1500">
-                I’m an experienced web developer with a proven track record in IT and services industry.
-                Skilled in HTML, CSS, Tailwind CSS, Bootstrap, JavaScript, PHP, and SQL — with React.js experience.
-                I create efficient, user-friendly, and visually appealing web solutions.
-            </p>
-
-            <div class="mt-4">
-                <a id="mail" href="mailto:charlesnixoncayading@gmail.com">
-                    <button id="btn-contact" class="btn btn-primary">
-                        Contact Me <i class="fa-solid fa-paper-plane ms-1"></i>
-                    </button>
-                </a>
-                <a href="https://www.facebook.com/charlesnixon.cayading" target="_blank" class="ms-3">
-                    <img src="https://img.icons8.com/?size=48&id=118497&format=png" alt="Facebook">
-                </a>
-            </div>
-        </div>
-
-        <div class="profile" data-aos="fade-left" data-aos-delay="2000" data-aos-duration="1000">
-            <img class="img1" src="images/image.jpg" alt="Profile Picture">
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section class="box2" id="aboutme">
-        <h1 data-aos="fade-up">About Me</h1>
-        <h2 data-aos="fade-up" data-aos-delay="200">Personal</h2>
-        <p data-aos="fade-up" data-aos-delay="400">
-            My journey into programming began in 2021 when
-            I first explored browser developer tools.
-            Discovering how HTML and CSS shaped the visuals of web pages sparked my passion
-            for web development. Since then, I’ve developed into a Web Developer with over
-            a year of experience creating modern, responsive, and efficient web applications.
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <div class="hero-content" data-aos="fade-right" data-aos-duration="700">
+        <div class="hero-badge">Available for opportunities</div>
+        <h1 class="hero-name">
+          Charles Nixon<br><span>Cayading</span>
+        </h1>
+        <p class="hero-role">
+          <span>$</span> Web Developer <span>&</span> IT Instructor
         </p>
-
-        <ul data-aos="fade-up" data-aos-delay="600">
-            <li>01+ Years of Experience</li>
-            <li>2+ Completed Projects</li>
-            <li>1+ Companies Worked</li>
-        </ul>
-
-        <div data-aos="fade-up" data-aos-delay="800">
-            <a href="page/index.html">
-                <button class="btn btn-primary mt-3">
-                    Download CV <i class="fa-solid fa-download ms-1"></i>
-                </button>
-            </a>
+        <p class="hero-desc">
+          Building efficient, user-friendly, and visually compelling web solutions.
+          Skilled in modern frontend and backend technologies with hands-on experience in real-world systems.
+        </p>
+        <div class="hero-actions">
+          <a href="mailto:charlesnixoncayading@gmail.com" class="btn-primary-custom">
+            <i class="fa-solid fa-paper-plane"></i> Contact Me
+          </a>
+          <a href="page/index.html" class="btn-ghost">
+            <i class="fa-solid fa-download"></i> Download CV
+          </a>
         </div>
-    </section>
+        <div class="hero-socials">
+          <a href="mailto:charlesnixoncayading@gmail.com" class="social-link" title="Email">
+            <i class="fa-solid fa-envelope"></i>
+          </a>
+          <a href="https://www.facebook.com/charlesnixon.cayading" target="_blank" class="social-link" title="Facebook">
+            <i class="fa-brands fa-facebook-f"></i>
+          </a>
+          <a href="https://github.com" target="_blank" class="social-link" title="GitHub">
+            <i class="fa-brands fa-github"></i>
+          </a>
+        </div>
+      </div>
 
-    <!-- Project Section -->
-    <section class="box3" id="projects">
-        <h1 data-aos="fade-up">Projects</h1>
-        <h2 data-aos="fade-up" data-aos-delay="200">See my Work</h2>
-        <div class="container" data-aos="fade-up" data-aos-duration="500">
-            <!-- Project Cards -->
-            <div class="projects-grid" data-aos="fade-up" data-aos-delay="300">
+      <div class="hero-image-wrap" data-aos="fade-left" data-aos-duration="700" data-aos-delay="150">
+        <div class="hero-image-ring"></div>
+        <img class="hero-img" src="images/image.jpg" alt="Charles Nixon Cayading"
+          onerror="this.src='https://ui-avatars.com/api/?name=Charles+Nixon&background=00f5d4&color=070711&size=300&bold=true'">
+        <div class="hero-stat-cards">
+          <div class="stat-card">
+            <div class="stat-num">2+</div>
+            <div class="stat-lbl">Projects Done</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">1+</div>
+            <div class="stat-lbl">Years Exp.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-                <div class="project-card">
-                    <img src="https://cdn-icons-gif.flaticon.com/17569/17569436.gif" alt="Project 1">
-                    <h3>IPT Link Submission</h3>
-                    <p>This submission contains my completed Integrated Programming Task, demonstrating the application
-                        of programming concepts and problem-solving skills learned in the module.</p>
-                    <a href="https://phpdemo.free.nf/admin/?i=1" target="_blank" class="btn-project">Visit Project</a>
-                </div>
-                <div class="project-card">
-                    <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif" alt="Project 2">
-                    <h3>BCC SASQR Code Generator</h3>
-                    <p>This submission is the BCC SAS QR Code Generator, a tool designed to create QR codes for the
-                        Student Attendance System, simplifying attendance tracking and management.</p>
-                    <a href="https://cnccayading.free.nf/bccsasqr/QRgenerator/QRcode.php" target="_blank"
-                        class="btn-project">Visit Project</a>
-                </div>
+  <div class="section-divider"></div>
 
-                <div class="project-card">
-                    <img src="https://cdn-icons-gif.flaticon.com/15575/15575688.gif" alt="Project 3">
-                    <h3>BCC Student Attendance System Using QR</h3>
-                    <p>The BCC Student Attendance System using QR codes, showcasing an automated way to record and
-                        manage student attendance efficiently.</p>
-                    <a href="https://cnccayading.free.nf/bccsasqr/" target="_blank" class="btn-project">Visit
-                        Project</a>
-                </div>
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-inner">
+      <div class="about-image-wrap" data-aos="fade-right" data-aos-duration="600">
+        <div class="about-img-frame">
+          <img src="images/image.jpg" alt="Charles Nixon"
+            onerror="this.src='https://ui-avatars.com/api/?name=CN&background=00f5d4&color=070711&size=500&bold=true'">
+        </div>
+        <div class="about-corner"></div>
+      </div>
+      <div data-aos="fade-left" data-aos-duration="600" data-aos-delay="100">
+        <span class="section-tag">// about me</span>
+        <h2 class="section-title">The Developer<br>Behind the Code</h2>
+        <p class="section-sub">
+          My journey into programming began in 2021 when I first explored browser developer tools.
+          Discovering how HTML and CSS shaped web pages sparked a passion that led me to become a
+          full-stack web developer and IT instructor at Binalatongan Community College.
+        </p>
+        <div class="about-stats">
+          <div class="astat">
+            <div class="astat-num">1+</div>
+            <div class="astat-lbl">Years of Experience</div>
+          </div>
+          <div class="astat">
+            <div class="astat-num">2+</div>
+            <div class="astat-lbl">Projects Completed</div>
+          </div>
+          <div class="astat">
+            <div class="astat-num">1</div>
+            <div class="astat-lbl">Company Worked</div>
+          </div>
+          <div class="astat">
+            <div class="astat-num">∞</div>
+            <div class="astat-lbl">Lines of Code Written</div>
+          </div>
+        </div>
+        <div class="about-tags">
+          <span class="tag">Web Development</span>
+          <span class="tag">IT Instructor</span>
+          <span class="tag">PHP / MySQL</span>
+          <span class="tag">React.js</span>
+          <span class="tag">UI/UX</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
-                <div class="project-card">
-                    <img src="https://cdn-icons-gif.flaticon.com/16075/16075899.gif" alt="Student Attendance Tracker">
-                    <h3>Student Attendance Tracker Using QR</h3>
-                    <p>The Student Attendance Tracker using QR codes provides an automated and efficient way to record,
-                        monitor, and manage student attendance in real time.</p>
-                    <a href="https://cnccayading.free.nf/bccsasqr/Tracker/view.php" target="_blank"
-                        class="btn-project">Visit Project</a>
-                </div>
+  <div class="section-divider"></div>
 
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div style="max-width:1100px;margin:0 auto 60px;" data-aos="fade-up" data-aos-duration="600">
+      <span class="section-tag">// projects</span>
+      <h2 class="section-title">Things I've Built</h2>
+      <p class="section-sub">A selection of projects that demonstrate my skills in building real-world web applications.</p>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="0">
+        <div class="project-img" style="background:#0d1117;">
+          <img src="https://cdn-icons-gif.flaticon.com/17569/17569436.gif" alt="">
+        </div>
+        <div class="project-body">
+          <h3>IPT Link Submission</h3>
+          <p>Completed Integrated Programming Task demonstrating real-world application of programming concepts and problem-solving skills.</p>
+          <a href="https://phpdemo.free.nf/admin/?i=1" target="_blank" class="project-link">
+            View Project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="80">
+        <div class="project-img" style="background:#0d1117;">
+          <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif" alt="">
+        </div>
+        <div class="project-body">
+          <h3>BCC SAS QR Code Generator</h3>
+          <p>A tool designed to generate QR codes for the Student Attendance System, simplifying attendance tracking and management.</p>
+          <a href="https://cnccayading.free.nf/bccsasqr/QRgenerator/QRcode.php" target="_blank" class="project-link">
+            View Project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="160">
+        <div class="project-img" style="background:#0d1117;">
+          <img src="https://cdn-icons-gif.flaticon.com/15575/15575688.gif" alt="">
+        </div>
+        <div class="project-body">
+          <h3>BCC Student Attendance System</h3>
+          <p>Automated QR-based attendance recording system for Binalatongan Community College — streamlines student monitoring.</p>
+          <a href="https://cnccayading.free.nf/bccsasqr/" target="_blank" class="project-link">
+            View Project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="240">
+        <div class="project-img" style="background:#0d1117;">
+          <img src="https://cdn-icons-gif.flaticon.com/16075/16075899.gif" alt="">
+        </div>
+        <div class="project-body">
+          <h3>Student Attendance Tracker</h3>
+          <p>Real-time QR-based tracker to monitor and manage student attendance records with live view functionality.</p>
+          <a href="https://cnccayading.free.nf/bccsasqr/Tracker/view.php" target="_blank" class="project-link">
+            View Project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="skills-inner">
+      <div class="skills-header" data-aos="fade-up" data-aos-duration="600">
+        <span class="section-tag">// skills</span>
+        <h2 class="section-title">My Tech Stack</h2>
+        <p class="section-sub">Technologies and tools I work with regularly.</p>
+      </div>
+
+      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+        <div class="cat-label">Frontend</div>
+        <div class="skills-grid">
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/1051/1051277.png">HTML5</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/5968/5968242.png">CSS3</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/5968/5968292.png">JavaScript</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/919/919851.png">React</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/15484/15484278.png">Vue JS</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/5968/5968672.png">Bootstrap</div>
+          <div class="skill-pill"><img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500">Tailwind</div>
+          <div class="skill-pill"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7KipS2XtctKfRQGPviR0UZVQtUdISRw1wVg&s">Material UI</div>
+        </div>
+      </div>
+
+      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200">
+        <div class="cat-label">Backend</div>
+        <div class="skills-grid">
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/5968/5968332.png">PHP</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/18405/18405529.png">MySQL</div>
+          <div class="skill-pill"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Laravel.svg/1154px-Laravel.svg.png">Laravel</div>
+          <div class="skill-pill"><img src="https://uxwing.com/wp-content/themes/uxwing/download/web-app-development/rest-api-icon.png">REST API</div>
+          <div class="skill-pill"><img src="https://cdn-icons-png.flaticon.com/128/919/919853.png">Docker</div>
+          <div class="skill-pill"><img src="https://www.svgrepo.com/show/353443/aws.svg">AWS</div>
+        </div>
+      </div>
+
+      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
+        <div class="cat-label">Tools</div>
+        <div class="skills-grid">
+          <div class="skill-pill"><img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png">GitHub</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-inner" data-aos="fade-up" data-aos-duration="600">
+      <span class="section-tag">// contact</span>
+      <h2 class="section-title">Let's Work Together</h2>
+      <p class="section-sub" style="margin:0 auto;">Have a project in mind or just want to connect? I'm always open to new opportunities and collaborations.</p>
+      <div class="contact-card">
+        <div class="contact-links">
+          <a href="mailto:charlesnixoncayading@gmail.com" class="contact-link-row">
+            <div class="left">
+              <div class="icon-circle"><i class="fa-solid fa-envelope"></i></div>
+              <div>
+                <div>Email Me</div>
+                <span>charlesnixoncayading@gmail.com</span>
+              </div>
             </div>
-        </div>
-
-    </section>
-
-    <!-- Skills Section -->
-    <section class="box4" id="skills">
-        <h1 data-aos="fade-up">Skills</h1>
-        <h2 data-aos="fade-up" data-aos-delay="200">My Technical Level</h2>
-
-        <!-- Frontend -->
-        <div class="container" data-aos="fade-up" data-aos-duration="500">
-            <h3><img src="https://cdn-icons-png.flaticon.com/128/12597/12597769.png" id="weblogo" alt=""> Frontend</h3>
-            <div class="skill">
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/15484/15484278.png"><span>Vue JS</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/919/919851.png"><span>React</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/5968/5968292.png"><span>JavaScript</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/1051/1051277.png"><span>HTML5</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/5968/5968242.png"><span>CSS3</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/5968/5968672.png"><span>Bootstrap</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"><span>Tailwind</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7KipS2XtctKfRQGPviR0UZVQtUdISRw1wVg&s"><span>Material
-                        UI</span></div>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a href="https://www.facebook.com/charlesnixon.cayading" target="_blank" class="contact-link-row">
+            <div class="left">
+              <div class="icon-circle"><i class="fa-brands fa-facebook-f"></i></div>
+              <div>
+                <div>Facebook</div>
+                <span>charlesnixon.cayading</span>
+              </div>
             </div>
-        </div>
-
-        <!-- Backend -->
-        <div class="container" data-aos="fade-up" data-aos-delay="600">
-            <h3><img src="https://cdn-icons-png.flaticon.com/128/13191/13191241.png" id="weblogo" alt=""> Backend</h3>
-            <div class="skill">
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/5968/5968332.png"><span>PHP</span></div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/18405/18405529.png"><span>MySQL</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://cdn-icons-png.flaticon.com/128/919/919853.png"><span>Docker</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Laravel.svg/1154px-Laravel.svg.png"><span>Laravel</span>
-                </div>
-                <div class="image"><img class="logo"
-                        src="https://uxwing.com/wp-content/themes/uxwing/download/web-app-development/rest-api-icon.png"><span>REST
-                        API</span></div>
-                <div class="image"><img class="logo" src="https://www.svgrepo.com/show/353443/aws.svg"><span>AWS</span>
-                </div>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a href="https://github.com" target="_blank" class="contact-link-row">
+            <div class="left">
+              <div class="icon-circle"><i class="fa-brands fa-github"></i></div>
+              <div>
+                <div>GitHub</div>
+                <span>View my repositories</span>
+              </div>
             </div>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Others -->
-        <div class="container" data-aos="fade-up" data-aos-delay="800">
-            <h3><img src="https://cdn-icons-png.flaticon.com/128/1055/1055683.png" id="weblogo" alt=""> Others</h3>
-            <div class="skill">
-                <div class="image"><img class="logo"
-                        src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png"><span>GitHub</span>
-                </div>
-            </div>
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2025 <span>Charles Nixon Cayading</span>. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="#hero">Home</a>
+      <a href="#about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </footer>
+
+  <!-- CHATBOT -->
+  <button class="chat-fab" id="chatFab" title="Chat with Lexon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+    </svg>
+    <div class="chat-badge" id="chatBadge">1</div>
+  </button>
+
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-head">
+      <div class="chat-head-info">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <h4>Lexon</h4>
+          <div class="chat-status"><span class="status-dot"></span> Online</div>
         </div>
+      </div>
+      <button class="chat-close" id="chatClose">×</button>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg bot">
+        <div class="msg-av">🤖</div>
+        <div class="msg-body">Hi! I'm Lexon, Charles' assistant. What would you like to know about his portfolio?</div>
+      </div>
+    </div>
+    <div class="quick-btns" id="quickBtns">
+      <button class="qbtn" onclick="sendQ('Tell me about his projects')">Projects</button>
+      <button class="qbtn" onclick="sendQ('What are his skills?')">Skills</button>
+      <button class="qbtn" onclick="sendQ('How to contact him?')">Contact</button>
+      <button class="qbtn" onclick="sendQ('Tell me about his experience')">Experience</button>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Ask about Charles..." onkeypress="if(event.key==='Enter')chatSend()">
+      <button class="chat-send" onclick="chatSend()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
 
-        <div class="footer" data-aos="fade-up">
-            Designed & Built By <i><span id="name"></span></i>
-        </div>
-    </section>
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    // ── LOADER ──
+    window.addEventListener('load', () => {
+      setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800);
+    });
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
-    <script src="js/loader.js"></script>
-    <script>
-        AOS.init();
-        var typed = new Typed('#name', {
-            strings: ['Charles Nixon Cayading'],
-            typeSpeed: 100,
-            loop: true,
+    // ── AOS ──
+    AOS.init({ once: true, offset: 60 });
+
+    // ── NAVBAR ACTIVE ──
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const active = document.querySelector(`.nav-links a[href="#${e.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { threshold: 0.4 });
+    sections.forEach(s => observer.observe(s));
+
+    // ── MOBILE NAV ──
+    const navToggle = document.getElementById('navToggle');
+    const navLinksEl = document.querySelector('.nav-links');
+    navToggle.addEventListener('click', () => {
+      const open = navLinksEl.style.display === 'flex';
+      navLinksEl.style.cssText = open ? '' :
+        'display:flex;flex-direction:column;position:fixed;top:70px;left:0;right:0;background:rgba(7,7,17,0.97);padding:24px;gap:16px;border-bottom:1px solid var(--border);z-index:99;';
+    });
+    navLinksEl.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => navLinksEl.style.cssText = '');
+    });
+
+    // ── CHAT ──
+    const fab = document.getElementById('chatFab');
+    const win = document.getElementById('chatWindow');
+    const badge = document.getElementById('chatBadge');
+    const msgs = document.getElementById('chatMsgs');
+    const input = document.getElementById('chatInput');
+    const qBtns = document.getElementById('quickBtns');
+
+    fab.addEventListener('click', () => {
+      win.classList.toggle('open');
+      badge.style.display = 'none';
+    });
+    document.getElementById('chatClose').addEventListener('click', () => win.classList.remove('open'));
+
+    const PORTFOLIO_CONTEXT = `You are Lexon, a helpful chatbot assistant for Charles Nixon Cayading's portfolio website.
+Charles is a Web Developer and IT Instructor at Binalatongan Community College.
+His skills include HTML, CSS, JavaScript, PHP, MySQL, React, Vue, Laravel, Bootstrap, Tailwind CSS, Docker, AWS, and GitHub.
+His projects include: IPT Link Submission, BCC SAS QR Code Generator, BCC Student Attendance System, and Student Attendance Tracker.
+Contact: charlesnixoncayading@gmail.com | Facebook: charlesnixon.cayading
+Experience: 1+ year of web development, IT Instructor role.
+Education: IT-related studies leading to his current instructor position.
+Keep answers concise, friendly, and relevant to Charles' portfolio. If asked something unrelated, gently redirect.`;
+
+    async function sendQ(text) {
+      addMsg(text, 'user');
+      qBtns.style.display = 'none';
+      await getReply(text);
+    }
+
+    async function chatSend() {
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      addMsg(text, 'user');
+      qBtns.style.display = 'none';
+      await getReply(text);
+    }
+
+    function addMsg(text, role) {
+      const d = document.createElement('div');
+      d.className = `msg ${role}`;
+      d.innerHTML = role === 'bot'
+        ? `<div class="msg-av">🤖</div><div class="msg-body">${text}</div>`
+        : `<div class="msg-body">${text}</div><div class="msg-av">👤</div>`;
+      msgs.appendChild(d);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function addTyping() {
+      const d = document.createElement('div');
+      d.className = 'msg bot'; d.id = 'typing';
+      d.innerHTML = '<div class="msg-av">🤖</div><div class="msg-body" style="color:var(--muted)">Typing...</div>';
+      msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    async function getReply(userMsg) {
+      addTyping();
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            system: PORTFOLIO_CONTEXT,
+            messages: [{ role: 'user', content: userMsg }]
+          })
         });
-    </script>
-    <script src="js/chat.js"></script>
+        const data = await res.json();
+        document.getElementById('typing')?.remove();
+        const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t get a response right now.';
+        addMsg(reply, 'bot');
+      } catch {
+        document.getElementById('typing')?.remove();
+        addMsg('Oops! Something went wrong. Try again.', 'bot');
+      }
+    }
+  </script>
 </body>
-
 </html>
