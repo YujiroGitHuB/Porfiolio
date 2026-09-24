@@ -1881,6 +1881,12 @@ footer p span {
         grid-column: 2;
     }
 
+    /* AOS starts fade-left cards 100px to the right, which pushes the single
+       column past the screen edge and widens the page — rise in instead */
+    .timeline-content[data-aos] {
+        transform: translate3d(0, 40px, 0);
+    }
+
     .skills-bento {
         grid-template-columns: 1fr;
     }
@@ -1910,6 +1916,12 @@ footer p span {
 
     .contact-card {
         padding: 40px 24px;
+    }
+
+    /* Keep the offset accent inside the screen on small phones */
+    .about-corner {
+        right: -12px;
+        bottom: -12px;
     }
 
     .skill-panel {
