@@ -8,26 +8,20 @@ A static personal portfolio website for Charles Nixon Cayading (Web Developer / 
 
 ## Running / deploying
 
-- **Local preview:** open the target `.html` directly in a browser, or serve the folder with any static server (e.g. `python -m http.server`). A server is preferable because pages fetch CDN assets and (for the chat) cross-origin APIs.
-- **Deploy:** the site is hosted on Vercel at `https://cncc.vercel.app` (referenced in `js/chat.js` and `js/loader.js`). Pushing to the `main` branch of the `origin` remote is the deploy path; there is no CI or config file in-repo.
+- **Local preview:** open the target `.html` directly in a browser, or serve the folder with any static server (e.g. `python -m http.server`). A server is preferable because pages fetch CDN assets.
+- **Deploy:** the site is hosted on Vercel at `https://cncc.vercel.app` (referenced in `js/loader.js`). Pushing to the `main` branch of the `origin` remote is the deploy path; there is no CI or config file in-repo.
 
-## Architecture — three parallel, non-shared page versions
+## Architecture — two parallel, non-shared page versions
 
-The repo contains **multiple standalone versions of the same portfolio** that do not share code. Know which one you are editing before making changes:
+The repo contains **two standalone versions of the same portfolio** that do not share code. Know which one you are editing before making changes:
 
-- **`index.html` — the current/canonical page.** Self-contained: styled only by `css/design.css`, and *all* of its JavaScript (loader, AOS init, scroll-spy navbar, mobile nav, chat widget) is inlined in a `<script>` at the bottom. It does **not** use anything in `js/`.
-- **`sample.html` — an older/alternate version.** Styled by `css/style.css` + `css/chat.css`; behavior comes from the external `js/chat.js` and `js/loader.js`. This is the only page that uses those JS files (and `loader.js` depends on jQuery/`$`).
-- **`chatbot.html` — a standalone chatbot demo** with fully inlined CSS and JS; not linked from the main site navigation.
+- **`index.html` — the current/canonical page.** Self-contained: styled only by `css/design.css`, and *all* of its JavaScript (loader, welcome voice, AOS init, scroll-spy navbar, mobile nav) is inlined in a `<script>` at the bottom. It does **not** use anything in `js/`.
+- **`sample.html` — an older/alternate version.** Styled by `css/style.css`; behavior comes from the external `js/loader.js`. This is the only page that uses that file (and `loader.js` depends on jQuery/`$`).
 - **`page/index.html` — a Colorlib 404 template** styled by `css/404.css`. Note: `index.html`'s "Download CV" button currently links here (`href="page/index.html"`) — treat that as a known placeholder, not a real CV.
 
-Because the versions are independent, a change to the design or content (e.g. project list, skills, contact info) must be applied to each page you intend to keep — editing `index.html` alone will not affect `sample.html` or `chatbot.html`.
+Because the versions are independent, a change to the design or content (e.g. project list, skills, contact info) must be applied to each page you intend to keep — editing `index.html` alone will not affect `sample.html`.
 
-## Chat widget — two different, incompatible implementations
-
-The "Lexon" assistant is implemented differently per page:
-
-- **`index.html`** calls the Anthropic Messages API directly from the browser (`https://api.anthropic.com/v1/messages`, model `claude-sonnet-4-20250514`). This request has **no auth header / API key** and will fail against the real API (auth + CORS); it works only if pointed at a proxy or backend that injects credentials. If you need a working chat here, add a server-side proxy rather than putting a key in client JS.
-- **`sample.html`** (via `js/chat.js`) uses keyword-matched canned replies + a Hugging Face inference endpoint fallback, plus browser Text-to-Speech (`speechSynthesis`, "Jarvis"-style voice). Bot identity/context strings are duplicated here and in `index.html` — keep them in sync if that matters.
+The site has no chatbot; the former "Lexon" chat widget and its files were removed.
 
 ## Design system (for `index.html` / `css/design.css`)
 

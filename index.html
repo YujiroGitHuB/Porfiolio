@@ -31,19 +31,132 @@
 <body>
 
   <!-- LOADER -->
-  <div id="loader">
-    <div class="loader-ring"></div>
-    <p class="loader-text">LOADING</p>
+  <div id="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <div class="loader-brand">
+        <span class="loader-bracket">&lt;</span><span class="loader-letters">CNCC</span><span class="loader-bracket">/&gt;</span>
+      </div>
+      <div class="loader-bar"><span class="loader-progress"></span></div>
+      <div class="loader-meta">
+        <span>Loading</span>
+        <span class="loader-percent">0%</span>
+      </div>
+    </div>
   </div>
+  <script>
+    // ── LOADER ──
+    // Runs right away (not at the end of the page) so the intro starts immediately.
+    // The brand decodes letter by letter while the bar eases toward 90% until the
+    // page has loaded, then fills. When both are done the loader lifts away.
+    const loader = document.getElementById('loader');
+    const loaderLetters = loader.querySelector('.loader-letters');
+    const loaderProgress = loader.querySelector('.loader-progress');
+    const loaderPercent = loader.querySelector('.loader-percent');
+    const BRAND = loaderLetters.textContent;
+    const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+=?';
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lockAt = i => reduceMotion ? 0 : 300 + (i + 1) * 180;
+    const decodeEnd = lockAt(BRAND.length - 1);
+    const loaderStart = performance.now();
+    let pageLoaded = false;
+    let shown = 0;
+    let lastFrame = -1;
+
+    loaderLetters.textContent = '';
+    const loaderSpans = [...BRAND].map(() => loaderLetters.appendChild(document.createElement('span')));
+
+    addEventListener('load', () => pageLoaded = true);
+    setTimeout(() => pageLoaded = true, 8000); // don't hold the page hostage to one slow asset
+
+    function tickLoader(now) {
+      const t = now - loaderStart;
+
+      // Swap the random glyphs ~16 times a second rather than every frame
+      const frame = Math.floor(t / 60);
+      if (frame !== lastFrame) {
+        lastFrame = frame;
+        loaderSpans.forEach((span, i) => {
+          const locked = t >= lockAt(i);
+          span.textContent = locked ? BRAND[i] : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+          span.classList.toggle('scramble', !locked);
+        });
+      }
+
+      const target = pageLoaded ? 100 : 90;
+      shown += (target - shown) * (pageLoaded ? 0.12 : 0.02);
+      if (target - shown < 0.5) shown = target;
+      loaderProgress.style.transform = `scaleX(${shown / 100})`;
+      loaderPercent.textContent = `${Math.round(shown)}%`;
+
+      if (shown === 100 && t >= decodeEnd) setTimeout(revealPage, 250);
+      else requestAnimationFrame(tickLoader);
+    }
+
+    // once: false replays the scroll animations each time you scroll back down
+    function startAOS() {
+      AOS.init({
+        once: false,
+        offset: 80,
+        duration: 700,
+        easing: 'ease-out-cubic',
+        disable: () => reduceMotion
+      });
+    }
+
+    function revealPage() {
+      loader.classList.add('hidden');
+      // Start AOS just after the curtain starts lifting so the hero entrance is seen
+      // (or once it arrives, if the 8s fallback fired before the AOS script loaded)
+      setTimeout(() => window.AOS ? startAOS() : addEventListener('load', startAOS, { once: true }), 200);
+      welcomeVoice();
+    }
+
+    // ── WELCOME VOICE ──
+    // Spoken as the loader lifts. Chrome, Edge and Safari block speech until the
+    // visitor has clicked, tapped or pressed a key, so when the automatic attempt
+    // is blocked the welcome plays on their first interaction instead.
+    const WELCOME_TEXT = "Welcome to my portfolio! I'm Charles Nixon Cayading, a web developer and IT instructor.";
+    const WELCOME_EVENTS = ['click', 'touchend', 'keydown'];
+    let welcomed = false;
+
+    function speakWelcome() {
+      if (welcomed) return;
+      const voices = speechSynthesis.getVoices();
+      const voice = voices.find(v => v.lang === 'en-US' && /natural|google/i.test(v.name))
+        || voices.find(v => v.lang === 'en-US')
+        || voices.find(v => v.lang.startsWith('en'));
+      const utterance = new SpeechSynthesisUtterance(WELCOME_TEXT);
+      if (voice) utterance.voice = voice;
+      utterance.lang = voice ? voice.lang : 'en-US';
+      utterance.onstart = utterance.onend = () => {
+        welcomed = true;
+        WELCOME_EVENTS.forEach(e => removeEventListener(e, speakWelcome));
+      };
+      speechSynthesis.cancel(); // drop a blocked attempt still sitting in the queue
+      speechSynthesis.speak(utterance);
+    }
+
+    function welcomeVoice() {
+      if (!('speechSynthesis' in window)) return;
+      WELCOME_EVENTS.forEach(e => addEventListener(e, speakWelcome));
+      speakWelcome();
+    }
+
+    // Chrome loads its voice list asynchronously; ask now so it's ready by the reveal
+    if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+    requestAnimationFrame(tickLoader);
+  </script>
 
   <!-- NAVBAR -->
   <nav id="navbar">
-    <a class="nav-brand" href="#">
-      CNCC
+    <a class="nav-brand" href="#" aria-label="CNCC">
+      <span><span class="nav-bracket">&lt;</span>CNCC<span class="nav-bracket">/&gt;</span></span>
     </a>
     <ul class="nav-links">
       <li><a href="#hero" class="active">Home</a></li>
       <li><a href="#about">About</a></li>
+      <li><a href="#journey">Journey</a></li>
       <li><a href="#projects">Projects</a></li>
       <li><a href="#skills">Skills</a></li>
       <li><a href="#contact">Contact</a></li>
@@ -58,19 +171,19 @@
     <div class="hero-grid-bg"></div>
     <div class="hero-glow"></div>
     <div class="hero-inner">
-      <div class="hero-content" data-aos="fade-right" data-aos-duration="700">
-        <div class="hero-badge">Available for opportunities</div>
-        <h1 class="hero-name">
+      <div class="hero-content">
+        <div class="hero-badge" data-aos="fade-down">Available for opportunities</div>
+        <h1 class="hero-name" data-aos="fade-up" data-aos-delay="100">
           Charles Nixon<br><span>Cayading</span>
         </h1>
-        <p class="hero-role">
+        <p class="hero-role" data-aos="fade-up" data-aos-delay="200">
           <span>$</span> Web Developer <span>&</span> IT Instructor
         </p>
-        <p class="hero-desc">
+        <p class="hero-desc" data-aos="fade-up" data-aos-delay="300">
           Building efficient, user-friendly, and visually compelling web solutions.
           Skilled in modern frontend and backend technologies with hands-on experience in real-world systems.
         </p>
-        <div class="hero-actions">
+        <div class="hero-actions" data-aos="stagger" data-aos-delay="400">
           <a href="mailto:charlesnixoncayading@gmail.com" class="btn-primary-custom">
             <i class="fa-solid fa-paper-plane"></i> Contact Me
           </a>
@@ -78,7 +191,7 @@
             <i class="fa-solid fa-download"></i> Download CV
           </a>
         </div>
-        <div class="hero-socials">
+        <div class="hero-socials" data-aos="stagger" data-aos-delay="550">
           <a href="mailto:charlesnixoncayading@gmail.com" class="social-link" title="Email">
             <i class="fa-solid fa-envelope"></i>
           </a>
@@ -91,18 +204,26 @@
         </div>
       </div>
 
-      <div class="hero-image-wrap" data-aos="fade-left" data-aos-duration="700" data-aos-delay="150">
-        <div class="hero-image-ring"></div>
-        <img class="hero-img" src="images/image.jpg" alt="Charles Nixon Cayading"
-          onerror="this.src='https://ui-avatars.com/api/?name=Charles+Nixon&background=00f5d4&color=070711&size=300&bold=true'">
-        <div class="hero-stat-cards">
+      <div class="hero-image-wrap" data-aos="zoom-in" data-aos-duration="900" data-aos-delay="200">
+        <div class="hero-portrait">
+          <div class="hero-image-ring"></div>
+          <img class="hero-img" src="images/image.jpg" alt="Charles Nixon Cayading"
+            onerror="this.src='https://ui-avatars.com/api/?name=Charles+Nixon&background=00f5d4&color=070711&size=300&bold=true'">
+        </div>
+        <div class="hero-stat-cards" data-aos="stagger" data-aos-delay="700">
           <div class="stat-card">
-            <div class="stat-num">8+</div>
-            <div class="stat-lbl">Projects Done</div>
+            <span class="stat-icon"><i class="fa-solid fa-laptop-code"></i></span>
+            <div>
+              <div class="stat-num">8+</div>
+              <div class="stat-lbl">Projects Done</div>
+            </div>
           </div>
           <div class="stat-card">
-            <div class="stat-num">1+</div>
-            <div class="stat-lbl">Years Exp.</div>
+            <span class="stat-icon"><i class="fa-solid fa-briefcase"></i></span>
+            <div>
+              <div class="stat-num">1+</div>
+              <div class="stat-lbl">Years Exp.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -114,22 +235,22 @@
   <!-- ABOUT -->
   <section id="about">
     <div class="about-inner">
-      <div class="about-image-wrap" data-aos="fade-right" data-aos-duration="600">
+      <div class="about-image-wrap" data-aos="fade-right" data-aos-duration="900">
         <div class="about-img-frame">
           <img src="images/image.jpg" alt="Charles Nixon"
             onerror="this.src='https://ui-avatars.com/api/?name=CN&background=00f5d4&color=070711&size=500&bold=true'">
         </div>
         <div class="about-corner"></div>
       </div>
-      <div data-aos="fade-left" data-aos-duration="600" data-aos-delay="100">
-        <span class="section-tag">// about me</span>
-        <h2 class="section-title">The Developer<br>Behind the Code</h2>
-        <p class="section-sub">
+      <div>
+        <span class="section-tag" data-aos="fade-up">// about me</span>
+        <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">The Developer<br>Behind the Code</h2>
+        <p class="section-sub" data-aos="fade-up" data-aos-delay="200">
           My journey into programming began in 2021 when I first explored browser developer tools.
           Discovering how HTML and CSS shaped web pages sparked a passion that led me to become a
           full-stack web developer and IT instructor at Binalatongan Community College.
         </p>
-        <div class="about-stats">
+        <div class="about-stats" data-aos="stagger" data-aos-delay="250">
           <div class="astat">
             <div class="astat-num">1+</div>
             <div class="astat-lbl">Years of Experience</div>
@@ -147,7 +268,7 @@
             <div class="astat-lbl">Lines of Code Written</div>
           </div>
         </div>
-        <div class="about-tags">
+        <div class="about-tags" data-aos="stagger">
           <span class="tag">Web Development</span>
           <span class="tag">IT Instructor</span>
           <span class="tag">PHP / MySQL</span>
@@ -160,152 +281,279 @@
 
   <div class="section-divider"></div>
 
+  <!-- JOURNEY -->
+  <section id="journey">
+    <div class="journey-inner">
+      <div class="journey-header">
+        <span class="section-tag" data-aos="fade-up">// journey</span>
+        <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">How I Got Here</h2>
+        <p class="section-sub" data-aos="fade-up" data-aos-delay="200">From exploring browser dev tools in 2021 to building systems and teaching IT.</p>
+      </div>
+
+      <!-- The line fills in as you scroll; odd items sit on the left (fade-right),
+           even on the right (fade-left). -->
+      <div class="timeline">
+        <div class="timeline-line"><span class="timeline-fill"></span></div>
+        <ol class="timeline-list">
+          <li class="timeline-item">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-right">
+              <article class="timeline-card">
+                <span class="timeline-year">2021</span>
+                <h3>Hello, World</h3>
+                <p>Discovered browser developer tools and saw how HTML and CSS shape a web page — the spark that started it all.</p>
+                <div class="project-tags">
+                  <span class="tech-tag">HTML</span>
+                  <span class="tech-tag">CSS</span>
+                </div>
+              </article>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-left">
+              <article class="timeline-card">
+                <span class="timeline-year">2023 – 2024</span>
+                <h3>Software Developer</h3>
+                <p>My first professional role — building and maintaining software as a developer.</p>
+              </article>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-right">
+              <article class="timeline-card">
+                <span class="timeline-year">2024</span>
+                <h3>IT Instructor</h3>
+                <span class="timeline-place">Binalatongan Community College</span>
+                <p>Started teaching IT at Binalatongan Community College while building systems for the school.</p>
+              </article>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-left">
+              <article class="timeline-card">
+                <span class="timeline-year">2025</span>
+                <h3>QR Attendance Systems</h3>
+                <span class="timeline-place">Binalatongan Community College</span>
+                <p>Built the SAS QR Code Generator, the Student Attendance System and a real-time attendance tracker to automate student monitoring.</p>
+                <div class="project-tags">
+                  <span class="tech-tag">PHP</span>
+                  <span class="tech-tag">MySQL</span>
+                  <span class="tech-tag">JavaScript</span>
+                </div>
+              </article>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-right">
+              <article class="timeline-card">
+                <span class="timeline-year">2026</span>
+                <h3>Full-Stack Platforms</h3>
+                <p>Shipped FormFlow, eGradeBook, SMART and the BCC Alumni Tracker — covering authentication, grading, records and alumni management.</p>
+                <div class="project-tags">
+                  <span class="tech-tag">Laravel</span>
+                  <span class="tech-tag">PHP</span>
+                  <span class="tech-tag">MySQL</span>
+                </div>
+              </article>
+            </div>
+          </li>
+          <li class="timeline-item timeline-item--now">
+            <span class="timeline-node"></span>
+            <div class="timeline-content" data-aos="fade-left">
+              <article class="timeline-card">
+                <span class="timeline-year">Now</span>
+                <h3>IT Instructor &amp; Remote Software Developer</h3>
+                <span class="timeline-place">Binalatongan Community College · Remote</span>
+                <p>Teaching programming, OOP and mobile app development on weekdays, and working as a remote software developer on weekends.</p>
+                <div class="project-tags">
+                  <span class="tech-tag">Programming</span>
+                  <span class="tech-tag">OOP</span>
+                  <span class="tech-tag">Mobile Apps</span>
+                </div>
+              </article>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
   <!-- PROJECTS -->
   <section id="projects">
-    <div style="max-width:1100px;margin:0 auto 60px;" data-aos="fade-up" data-aos-duration="600">
-      <span class="section-tag">// projects</span>
-      <h2 class="section-title">Things I've Built</h2>
-      <p class="section-sub">A selection of projects that demonstrate my skills in building real-world web applications.</p>
+    <div style="max-width:1100px;margin:0 auto 60px;">
+      <span class="section-tag" data-aos="fade-up">// projects</span>
+      <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">Things I've Built</h2>
+      <p class="section-sub" data-aos="fade-up" data-aos-delay="200">A selection of projects that demonstrate my skills in building real-world web applications.</p>
     </div>
     <div class="projects-grid">
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="0">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/17569/17569436.gif" alt="">
-        </div>
-        <div class="project-body">
-          <h3>IPT Link Submission</h3>
-          <p>Completed Integrated Programming Task demonstrating real-world application of programming concepts and problem-solving skills.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="0">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/17569/17569436.gif" alt="">
           </div>
-          <a href="https://phpdemo.free.nf/admin/?i=1" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>IPT Link Submission</h3>
+            <p>Completed Integrated Programming Task demonstrating real-world application of programming concepts and problem-solving skills.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://phpdemo.free.nf/admin/?i=1" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="80">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif" alt="">
-        </div>
-        <div class="project-body">
-          <h3>BCC SAS QR Code Generator</h3>
-          <p>A tool designed to generate QR codes for the Student Attendance System, simplifying attendance tracking and management.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">JavaScript</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="100">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/7994/7994392.gif" alt="">
           </div>
-          <a href="https://lexondev.com/bccsasqr/QRgenerator/QRcode.php" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>BCC SAS QR Code Generator</h3>
+            <p>A tool designed to generate QR codes for the Student Attendance System, simplifying attendance tracking and management.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">JavaScript</span>
+            </div>
+            <a href="https://lexondev.com/bccsasqr/QRgenerator/QRcode.php" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="160">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/15575/15575688.gif" alt="">
-        </div>
-        <div class="project-body">
-          <h3>BCC Student Attendance System</h3>
-          <p>Automated QR-based attendance recording system for Binalatongan Community College — streamlines student monitoring.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="200">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/15575/15575688.gif" alt="">
           </div>
-          <a href="https://lexondev.com/bccsasqr/" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>BCC Student Attendance System</h3>
+            <p>Automated QR-based attendance recording system for Binalatongan Community College — streamlines student monitoring.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://lexondev.com/bccsasqr/" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="240">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/16075/16075899.gif" alt="">
-        </div>
-        <div class="project-body">
-          <h3>Student Attendance Tracker</h3>
-          <p>Real-time QR-based tracker to monitor and manage student attendance records with live view functionality.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">JavaScript</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="0">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/16075/16075899.gif" alt="">
           </div>
-          <a href="https://lexondev.com/bccsasqr/Tracker/view.php" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>Student Attendance Tracker</h3>
+            <p>Real-time QR-based tracker to monitor and manage student attendance records with live view functionality.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">JavaScript</span>
+            </div>
+            <a href="https://lexondev.com/bccsasqr/Tracker/view.php" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="240">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/17644/17644522.gif" alt="">
-        </div>
-        <div class="project-body">
-          <h3>FormFlow - Form Platform Management</h3>
-          <p>Forms Management System is a web-based platform designed to digitize the creation, submission, and management of forms. The system provides secure user authentication, centralized data storage, and efficient record management to improve productivity, accuracy, and accessibility of information.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="100">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/17644/17644522.gif" alt="">
           </div>
-          <a href="https://lexondev.com/FormFlow/login.php" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>FormFlow - Form Platform Management</h3>
+            <p>Forms Management System is a web-based platform designed to digitize the creation, submission, and management of forms. The system provides secure user authentication, centralized data storage, and efficient record management to improve productivity, accuracy, and accessibility of information.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://lexondev.com/FormFlow/login.php" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="320">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/19034/19034936.gif" alt=""
-            onerror="this.src='https://ui-avatars.com/api/?name=eGB&background=0d1117&color=00f5d4&size=200&bold=true'">
-        </div>
-        <div class="project-body">
-          <h3>eGradeBook</h3>
-          <p>A digital gradebook system for recording, computing, and managing student grades — streamlining grade tracking, computation, and reporting for teachers.</p>
-          <div class="project-tags">
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="200">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/19034/19034936.gif" alt=""
+              onerror="this.src='https://ui-avatars.com/api/?name=eGB&background=ffffff&color=0d1117&size=200&bold=true'">
           </div>
-          <a href="https://lexondev.com/eGradeBook/" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>eGradeBook</h3>
+            <p>A digital gradebook system for recording, computing, and managing student grades — streamlining grade tracking, computation, and reporting for teachers.</p>
+            <div class="project-tags">
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://lexondev.com/eGradeBook/" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="400">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/19027/19027927.gif" alt=""
-            onerror="this.src='https://ui-avatars.com/api/?name=SM&background=0d1117&color=00f5d4&size=200&bold=true'">
-        </div>
-        <div class="project-body">
-          <h3>SMART - Student Manual Access and Record Tracker</h3>
-          <p>A web-based system for managing student access and tracking records — centralizing student information and streamlining record monitoring and management.</p>
-          <div class="project-tags">
-            <span class="tech-tag">Laravel</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="0">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/19027/19027927.gif" alt=""
+              onerror="this.src='https://ui-avatars.com/api/?name=SM&background=ffffff&color=0d1117&size=200&bold=true'">
           </div>
-          <a href="https://lexondev.com/smart/public/" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>SMART - Student Manual Access and Record Tracker</h3>
+            <p>A web-based system for managing student access and tracking records — centralizing student information and streamlining record monitoring and management.</p>
+            <div class="project-tags">
+              <span class="tech-tag">Laravel</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://lexondev.com/smart/public/" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="project-card" data-aos="fade-up" data-aos-duration="600" data-aos-delay="400">
-        <div class="project-img" style="background:#0d1117;">
-          <img src="https://cdn-icons-gif.flaticon.com/19014/19014241.gif" alt=""
-            onerror="this.src='https://ui-avatars.com/api/?name=AT&background=0d1117&color=00f5d4&size=200&bold=true'">
-        </div>
-        <div class="project-body">
-          <h3>BCC Alumni Tracker System</h3>
-          <p>A web-based alumni tracking system for Binalatongan Community College — maintains graduate records, employment status, and contact details to keep the institution connected with its alumni.</p>
-          <div class="project-tags">
-            <span class="tech-tag">Vanilla JS ES6 </span>
-            <span class="tech-tag">PHP</span>
-            <span class="tech-tag">MySQL</span>
-            <span class="tech-tag">Bootstrap</span>
+      <div class="project-wrap" data-aos="holo-in" data-aos-duration="700" data-aos-easing="ease-out-cubic" data-aos-delay="100">
+        <div class="project-card">
+          <div class="project-img" style="background:#0d1117;">
+            <span class="holo-pad" aria-hidden="true"></span>
+            <img src="https://cdn-icons-gif.flaticon.com/19014/19014241.gif" alt=""
+              onerror="this.src='https://ui-avatars.com/api/?name=AT&background=ffffff&color=0d1117&size=200&bold=true'">
           </div>
-          <a href="https://lexondev.com/bccats/public/login" target="_blank" class="project-link">
-            View Project <i class="fa-solid fa-arrow-right"></i>
-          </a>
+          <div class="project-body">
+            <h3>BCC Alumni Tracker System</h3>
+            <p>A web-based alumni tracking system for Binalatongan Community College — maintains graduate records, employment status, and contact details to keep the institution connected with its alumni.</p>
+            <div class="project-tags">
+              <span class="tech-tag">Vanilla JS ES6 </span>
+              <span class="tech-tag">PHP</span>
+              <span class="tech-tag">MySQL</span>
+              <span class="tech-tag">Bootstrap</span>
+            </div>
+            <a href="https://lexondev.com/bccats/public/login" target="_blank" class="project-link">
+              View Project <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -316,45 +564,71 @@
   <!-- SKILLS -->
   <section id="skills">
     <div class="skills-inner">
-      <div class="skills-header" data-aos="fade-up" data-aos-duration="600">
-        <span class="section-tag">// skills</span>
-        <h2 class="section-title">My Tech Stack</h2>
-        <p class="section-sub">Technologies and tools I work with regularly.</p>
+      <div class="skills-header">
+        <span class="section-tag" data-aos="fade-up">// skills</span>
+        <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">My Tech Stack</h2>
+        <p class="section-sub" data-aos="fade-up" data-aos-delay="200">Technologies and tools I work with regularly.</p>
       </div>
 
-      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
-        <div class="cat-label">Frontend</div>
-        <div class="skills-grid">
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg">HTML5</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg">CSS3</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg">JavaScript</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg">React</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg">Vue JS</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bootstrap/bootstrap-original.svg">Bootstrap</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg">Tailwind</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/materialui/materialui-original.svg">Material UI</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg">Flutter</div>
+      <!-- --c is each tech's brand color; tiles glow in it on hover.
+           .logo-invert flips logos that are too dark to read on the dark theme. -->
+      <div class="skills-bento">
+        <div class="skill-panel" data-aos="fade-up">
+          <div class="panel-head">
+            <span class="panel-icon"><i class="fa-solid fa-code"></i></span>
+            <h3>Frontend</h3>
+            <span class="panel-count"></span>
+          </div>
+          <div class="skill-grid" data-aos="stagger" data-aos-delay="150">
+            <div class="skill-tile" style="--c:#e34f26"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" alt=""></span>HTML5</div>
+            <div class="skill-tile" style="--c:#2965f1"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" alt=""></span>CSS3</div>
+            <div class="skill-tile" style="--c:#f7df1e"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" alt=""></span>JavaScript</div>
+            <div class="skill-tile" style="--c:#61dafb"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt=""></span>React</div>
+            <div class="skill-tile" style="--c:#42b883"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" alt=""></span>Vue JS</div>
+            <div class="skill-tile" style="--c:#8c5cf5"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bootstrap/bootstrap-original.svg" alt=""></span>Bootstrap</div>
+            <div class="skill-tile" style="--c:#38bdf8"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" alt=""></span>Tailwind</div>
+            <div class="skill-tile" style="--c:#007fff"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/materialui/materialui-original.svg" alt=""></span>Material UI</div>
+          </div>
         </div>
-      </div>
 
-      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200">
-        <div class="cat-label">Backend</div>
-        <div class="skills-grid">
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg">PHP</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg">MySQL</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/laravel/laravel-original.svg">Laravel</div>
-          <div class="skill-pill"><img src="https://uxwing.com/wp-content/themes/uxwing/download/web-app-development/rest-api-icon.png">REST API</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg">Docker</div>
-          <div class="skill-pill"><img src="https://www.svgrepo.com/show/353443/aws.svg">AWS</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/supabase/supabase-original.svg">Supabase</div>
-          <div class="skill-pill"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/firebase/firebase-plain.svg">Firebase</div>
+        <div class="skill-panel" data-aos="fade-up" data-aos-delay="100">
+          <div class="panel-head">
+            <span class="panel-icon"><i class="fa-solid fa-server"></i></span>
+            <h3>Backend</h3>
+            <span class="panel-count"></span>
+          </div>
+          <div class="skill-grid" data-aos="stagger" data-aos-delay="250">
+            <div class="skill-tile" style="--c:#8892bf"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" alt=""></span>PHP</div>
+            <div class="skill-tile" style="--c:#4479a1"><span class="skill-icon"><img class="logo-invert" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" alt=""></span>MySQL</div>
+            <div class="skill-tile" style="--c:#ff2d20"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/laravel/laravel-original.svg" alt=""></span>Laravel</div>
+            <div class="skill-tile" style="--c:#00f5d4"><span class="skill-icon"><img class="logo-invert" src="https://uxwing.com/wp-content/themes/uxwing/download/web-app-development/rest-api-icon.png" alt=""></span>REST API</div>
+            <div class="skill-tile" style="--c:#2496ed"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" alt=""></span>Docker</div>
+            <div class="skill-tile" style="--c:#ff9900"><span class="skill-icon"><img class="logo-invert" src="https://www.svgrepo.com/show/353443/aws.svg" alt=""></span>AWS</div>
+            <div class="skill-tile" style="--c:#3ecf8e"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/supabase/supabase-original.svg" alt=""></span>Supabase</div>
+            <div class="skill-tile" style="--c:#ffca28"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/firebase/firebase-plain.svg" alt=""></span>Firebase</div>
+          </div>
         </div>
-      </div>
 
-      <div class="skills-category" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
-        <div class="cat-label">Tools</div>
-        <div class="skills-grid">
-          <div class="skill-pill"><img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png">GitHub</div>
+        <div class="skill-panel skill-panel--strip" data-aos="fade-up">
+          <div class="panel-head">
+            <span class="panel-icon"><i class="fa-solid fa-mobile-screen-button"></i></span>
+            <h3>Mobile</h3>
+            <span class="panel-count"></span>
+          </div>
+          <div class="skill-grid" data-aos="stagger" data-aos-delay="150">
+            <div class="skill-tile" style="--c:#54c5f8"><span class="skill-icon"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" alt=""></span>Flutter</div>
+          </div>
+        </div>
+
+        <div class="skill-panel skill-panel--strip" data-aos="fade-up" data-aos-delay="100">
+          <div class="panel-head">
+            <span class="panel-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+            <h3>Tools</h3>
+            <span class="panel-count"></span>
+          </div>
+          <div class="skill-grid" data-aos="stagger" data-aos-delay="250">
+            <div class="skill-tile" style="--c:#e2e8f0"><span class="skill-icon"><img class="logo-invert" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt=""></span>GitHub</div>
+          </div>
         </div>
       </div>
     </div>
@@ -364,12 +638,12 @@
 
   <!-- CONTACT -->
   <section id="contact">
-    <div class="contact-inner" data-aos="fade-up" data-aos-duration="600">
-      <span class="section-tag">// contact</span>
-      <h2 class="section-title">Let's Work Together</h2>
-      <p class="section-sub" style="margin:0 auto;">Have a project in mind or just want to connect? I'm always open to new opportunities and collaborations.</p>
-      <div class="contact-card">
-        <div class="contact-links">
+    <div class="contact-inner">
+      <span class="section-tag" data-aos="fade-up">// contact</span>
+      <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">Let's Work Together</h2>
+      <p class="section-sub" style="margin:0 auto;" data-aos="fade-up" data-aos-delay="200">Have a project in mind or just want to connect? I'm always open to new opportunities and collaborations.</p>
+      <div class="contact-card" data-aos="fade-up" data-aos-duration="900" data-aos-delay="250">
+        <div class="contact-links" data-aos="stagger" data-aos-delay="500">
           <a href="mailto:charlesnixoncayading@gmail.com" class="contact-link-row">
             <div class="left">
               <div class="icon-circle"><i class="fa-solid fa-envelope"></i></div>
@@ -407,8 +681,8 @@
 
   <!-- FOOTER -->
   <footer>
-    <p>© 2025 <span>Charles Nixon Cayading</span>. All rights reserved.</p>
-    <div class="footer-links">
+    <p data-aos="fade-up" data-aos-offset="0">© 2025 <span>Charles Nixon Cayading</span>. All rights reserved.</p>
+    <div class="footer-links" data-aos="fade-up" data-aos-offset="0" data-aos-delay="100">
       <a href="#hero">Home</a>
       <a href="#about">About</a>
       <a href="#projects">Projects</a>
@@ -416,54 +690,87 @@
     </div>
   </footer>
 
-  <!-- CHATBOT -->
-  <button class="chat-fab" id="chatFab" title="Chat with Lexon">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-    </svg>
-    <div class="chat-badge" id="chatBadge">1</div>
-  </button>
-
-  <div class="chat-window" id="chatWindow">
-    <div class="chat-head">
-      <div class="chat-head-info">
-        <div class="chat-avatar">🤖</div>
-        <div>
-          <h4>Lexon</h4>
-          <div class="chat-status"><span class="status-dot"></span> Online</div>
-        </div>
-      </div>
-      <button class="chat-close" id="chatClose">×</button>
-    </div>
-    <div class="chat-msgs" id="chatMsgs">
-      <div class="msg bot">
-        <div class="msg-av">🤖</div>
-        <div class="msg-body">Hi! I'm Lexon, Charles' assistant. What would you like to know about his portfolio?</div>
-      </div>
-    </div>
-    <div class="quick-btns" id="quickBtns">
-      <button class="qbtn" onclick="sendQ('Tell me about his projects')">Projects</button>
-      <button class="qbtn" onclick="sendQ('What are his skills?')">Skills</button>
-      <button class="qbtn" onclick="sendQ('How to contact him?')">Contact</button>
-      <button class="qbtn" onclick="sendQ('Tell me about his experience')">Experience</button>
-    </div>
-    <div class="chat-input-row">
-      <input class="chat-input" id="chatInput" placeholder="Ask about Charles..." onkeypress="if(event.key==='Enter')chatSend()">
-      <button class="chat-send" onclick="chatSend()"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-  </div>
-
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
-    // ── LOADER ──
-    window.addEventListener('load', () => {
-      setTimeout(() => document.getElementById('loader').classList.add('hidden'), 800);
+    // ── AOS ──
+    // Children of a data-aos="stagger" group pop in one after another, starting
+    // at the group's data-aos-delay.
+    document.querySelectorAll('[data-aos="stagger"]').forEach(group => {
+      const base = Number(group.dataset.aosDelay) || 0;
+      [...group.children].forEach((child, i) => child.style.animationDelay = `${base + i * 70}ms`);
     });
 
-    // ── AOS ──
-    AOS.init({ once: true, offset: 60 });
+    // ── PROJECT CARD HOLOGRAM TILT ──
+    if (matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) {
+      document.querySelectorAll('.project-card').forEach(card => {
+        card.addEventListener('pointermove', e => {
+          // Measure the untilted wrapper so the tilt doesn't feed back into itself
+          const r = card.parentElement.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top) / r.height;
+          card.style.setProperty('--mx', `${x * 100}%`);
+          card.style.setProperty('--my', `${y * 100}%`);
+          card.style.setProperty('--rx', `${(0.5 - y) * 10}deg`);
+          card.style.setProperty('--ry', `${(x - 0.5) * 12}deg`);
+        });
+        card.addEventListener('pointerleave', () => {
+          ['--mx', '--my', '--rx', '--ry'].forEach(p => card.style.removeProperty(p));
+        });
+      });
+    }
+
+    // ── SKILL PANELS ──
+    document.querySelectorAll('.skill-panel').forEach(panel => {
+      const count = panel.querySelectorAll('.skill-tile').length;
+      panel.querySelector('.panel-count').textContent = String(count).padStart(2, '0');
+      panel.addEventListener('pointermove', e => {
+        const r = panel.getBoundingClientRect();
+        panel.style.setProperty('--x', `${e.clientX - r.left}px`);
+        panel.style.setProperty('--y', `${e.clientY - r.top}px`);
+      });
+    });
+
+    // ── JOURNEY TIMELINE ──
+    // The line fills down to 60% of the viewport height; nodes above that point light up.
+    const timeline = document.querySelector('.timeline');
+    const timelineLine = timeline.querySelector('.timeline-line');
+    const timelineFill = timeline.querySelector('.timeline-fill');
+    const timelineItems = timeline.querySelectorAll('.timeline-item');
+    let timelineTicking = false;
+
+    function updateTimeline() {
+      timelineTicking = false;
+      const trigger = innerHeight * 0.6;
+      const line = timelineLine.getBoundingClientRect();
+      const progress = Math.min(Math.max((trigger - line.top) / line.height, 0), 1);
+      timelineFill.style.height = `${progress * 100}%`;
+      timeline.classList.toggle('is-active', progress > 0);
+      timelineItems.forEach(item => {
+        const node = item.querySelector('.timeline-node').getBoundingClientRect();
+        item.classList.toggle('is-lit', node.top + node.height / 2 <= trigger);
+      });
+    }
+
+    // End the line at the last node instead of the bottom of the last card
+    function layoutTimeline() {
+      const nodes = timeline.querySelectorAll('.timeline-node');
+      const last = nodes[nodes.length - 1].getBoundingClientRect();
+      const box = timeline.getBoundingClientRect();
+      timelineLine.style.bottom = `${box.bottom - (last.top + last.height / 2)}px`;
+      updateTimeline();
+    }
+
+    addEventListener('scroll', () => {
+      if (!timelineTicking) {
+        timelineTicking = true;
+        requestAnimationFrame(updateTimeline);
+      }
+    }, { passive: true });
+    addEventListener('resize', layoutTimeline);
+    addEventListener('load', layoutTimeline);
+    layoutTimeline();
 
     // ── NAVBAR ACTIVE ──
     const sections = document.querySelectorAll('section[id]');
@@ -490,80 +797,6 @@
     navLinksEl.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => navLinksEl.style.cssText = '');
     });
-
-    // ── CHAT ──
-    const fab = document.getElementById('chatFab');
-    const win = document.getElementById('chatWindow');
-    const badge = document.getElementById('chatBadge');
-    const msgs = document.getElementById('chatMsgs');
-    const input = document.getElementById('chatInput');
-    const qBtns = document.getElementById('quickBtns');
-
-    fab.addEventListener('click', () => {
-      win.classList.toggle('open');
-      badge.style.display = 'none';
-    });
-    document.getElementById('chatClose').addEventListener('click', () => win.classList.remove('open'));
-
-    const PORTFOLIO_CONTEXT = `You are Lexon, a helpful chatbot assistant for Charles Nixon Cayading's portfolio website.
-Charles is a Web Developer and IT Instructor at Binalatongan Community College.
-His skills include HTML, CSS, JavaScript, PHP, MySQL, React, Vue, Laravel, Bootstrap, Tailwind CSS, Docker, AWS, and GitHub.
-His projects include: IPT Link Submission, BCC SAS QR Code Generator, BCC Student Attendance System, and Student Attendance Tracker.
-Contact: charlesnixoncayading@gmail.com | Facebook: charlesnixon.cayading
-Experience: 1+ year of web development, IT Instructor role.
-Education: IT-related studies leading to his current instructor position.
-Keep answers concise, friendly, and relevant to Charles' portfolio. If asked something unrelated, gently redirect.`;
-
-    async function sendQ(text) {
-      addMsg(text, 'user');
-      qBtns.style.display = 'none';
-      await getReply(text);
-    }
-
-    async function chatSend() {
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      addMsg(text, 'user');
-      qBtns.style.display = 'none';
-      await getReply(text);
-    }
-
-    function addMsg(text, role) {
-      const d = document.createElement('div');
-      d.className = `msg ${role}`;
-      d.innerHTML = role === 'bot'
-        ? `<div class="msg-av">🤖</div><div class="msg-body">${text}</div>`
-        : `<div class="msg-body">${text}</div><div class="msg-av">👤</div>`;
-      msgs.appendChild(d);
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-
-    function addTyping() {
-      const d = document.createElement('div');
-      d.className = 'msg bot'; d.id = 'typing';
-      d.innerHTML = '<div class="msg-av">🤖</div><div class="msg-body" style="color:var(--muted)">Typing...</div>';
-      msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
-    }
-
-    async function getReply(userMsg) {
-      addTyping();
-      try {
-        // Calls our own PHP proxy (chat-api.php) so the API key stays server-side.
-        const res = await fetch('chat-api.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userMsg })
-        });
-        const data = await res.json();
-        document.getElementById('typing')?.remove();
-        const reply = data.reply || 'Sorry, I couldn\'t get a response right now.';
-        addMsg(reply, 'bot');
-      } catch {
-        document.getElementById('typing')?.remove();
-        addMsg('Oops! Something went wrong. Try again.', 'bot');
-      }
-    }
   </script>
 </body>
 </html>
